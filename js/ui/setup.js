@@ -65,7 +65,7 @@ function syncSection() {
     body = `${g}<label class="field"><span>${t('m.email')}</span><input type="email" id="em" autocomplete="username" inputmode="email" autocapitalize="off"></label>
       <label class="field"><span>${t('m.password')}</span><input type="password" id="pw" autocomplete="current-password"></label>
       <div class="btns two"><button class="btn" data-act="auth" data-arg="up">${t('m.signUp')}</button><button class="btn primary" data-act="auth" data-arg="in">${t('m.signIn')}</button></div>
-      <p style="margin-top:12px"><button class="link small" data-act="cfg-forget">${t('m.forget')}</button></p>`;
+`;
   } else {
     body = `<p>${t('m.signedIn', esc(who))}</p><p class="status" id="sync-status">${syncLine()}</p>
       <div class="btns two"><button class="btn" data-act="sign-out">${t('m.signOut')}</button><button class="btn primary" data-act="sync-now">${t('m.syncNow')}</button></div>`;

@@ -4,7 +4,14 @@
 import { S, commit } from './store.js';
 
 const KEY = 'chalk.auth';
+// Jay's Firebase project. Web config values are public identifiers; the Firestore rules protect the data.
+const BUILT_IN = {
+  apiKey: 'AIzaSyBNN6KmspyjNFuXvTKJzN778HTQEStgt_I',
+  projectId: 'chalk-calisthenics',
+  clientId: '163135693247-g1poe8hmlkijamuk9jfs8urgnrf9t0ck.apps.googleusercontent.com',
+};
 let A = (() => { try { return JSON.parse(localStorage.getItem(KEY)) ?? {}; } catch { return {}; } })();
+if (!A.cfg) A.cfg = BUILT_IN;
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(A)); } catch { /* ignore */ } };
 
 export const status = { busy: false, error: null };
@@ -22,7 +29,7 @@ export function parseConfig(text) {
   const clientId = (String(text).match(/[\w-]+\.apps\.googleusercontent\.com/) ?? [])[0];
   return apiKey && projectId ? { apiKey, projectId, ...(clientId ? { clientId } : {}) } : null;
 }
-export function setConfig(cfg) { A = cfg ? { cfg } : {}; save(); emit(); }
+export function setConfig(cfg) { A = { cfg: cfg ?? BUILT_IN }; save(); emit(); }
 export function setClientId(text) {
   const id = (String(text).match(/[\w-]+\.apps\.googleusercontent\.com/) ?? [])[0];
   if (!id || !A.cfg) return false;
