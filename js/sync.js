@@ -19,9 +19,15 @@ export const account = () => (A.uid ? A.email : null);
 export function parseConfig(text) {
   const grab = k => (String(text).match(new RegExp(`["']?${k}["']?\\s*:\\s*["']([^"']+)["']`)) ?? [])[1];
   const apiKey = grab('apiKey'), projectId = grab('projectId');
-  return apiKey && projectId ? { apiKey, projectId } : null;
+  const clientId = (String(text).match(/[\w-]+\.apps\.googleusercontent\.com/) ?? [])[0];
+  return apiKey && projectId ? { apiKey, projectId, ...(clientId ? { clientId } : {}) } : null;
 }
 export function setConfig(cfg) { A = cfg ? { cfg } : {}; save(); emit(); }
+export function setClientId(text) {
+  const id = (String(text).match(/[\w-]+\.apps\.googleusercontent\.com/) ?? [])[0];
+  if (!id || !A.cfg) return false;
+  A.cfg.clientId = id; save(); emit(); return true;
+}
 
 class SyncError extends Error { constructor(msg, code) { super(msg); this.code = code; } }
 
@@ -43,7 +49,37 @@ async function post(url, body, form) {
 export async function signIn(email, password, create) {
   const ep = create ? 'signUp' : 'signInWithPassword';
   try {
-    const d = await post(`https://identitytoolkit.googleapis.com/v1/accounts:${ep}?key=${A.cfg.apiKey}`, { email, password, returnSecureToken: true });
+    await welcome(await post(`https://identitytoolkit.googleapis.com/v1/accounts:${ep}?key=${A.cfg.apiKey}`, { email, password, returnSecureToken: true }));
+    return null;
+  } catch (e) {
+    return String(e.message).split(' ')[0];
+  }
+}
+
+// Google sign-in as a full-page redirect: popups and hidden frames break in iPhone home-screen apps.
+const here = () => location.origin + location.pathname;
+export function googleStart() {
+  A.state = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  save();
+  location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
+    client_id: A.cfg.clientId, redirect_uri: here(), response_type: 'id_token', scope: 'openid email profile',
+    nonce: A.state, state: A.state, prompt: 'select_account',
+  });
+}
+// Called at start-up. Returns null if this is not a return from Google, else a promise of an error code (null when it worked).
+export function googleReturn() {
+  const q = new URLSearchParams(location.hash.slice(1));
+  if (!q.has('id_token') && !q.has('error')) return null;
+  history.replaceState(null, '', here() + '#me');
+  if (q.get('error') || !A.cfg || q.get('state') !== A.state) return Promise.resolve(q.get('error') === 'access_denied' ? 'CANCELLED' : 'GOOGLE');
+  delete A.state;
+  return post(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=${A.cfg.apiKey}`, {
+    postBody: `id_token=${q.get('id_token')}&providerId=google.com`, requestUri: here(), returnSecureToken: true,
+  }).then(welcome).then(() => null, e => String(e.message).split(' ')[0]);
+}
+
+async function welcome(d) {
+  {
     A = { cfg: A.cfg, email: d.email, uid: d.localId, id: d.idToken, refresh: d.refreshToken, exp: Date.now() + Number(d.expiresIn) * 1000 };
     save();
     // A first sync for this account sends everything on this device.
@@ -52,9 +88,6 @@ export async function signIn(email, password, create) {
     for (const s of S.sessions) S.sync.dirty.sessions[s.id] = true;
     emit();
     await syncNow();
-    return null;
-  } catch (e) {
-    return String(e.message).split(' ')[0];
   }
 }
 export function signOut() { A = { cfg: A.cfg }; save(); emit(); }

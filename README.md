@@ -14,11 +14,15 @@ A personal calisthenics coach that runs in the browser and installs on the iPhon
 
 Open the site in Safari, tap Share, then **Add to Home Screen**.
 
-## Cloud sync (optional)
+## Cloud sync and Google sign-in (optional)
 
 1. Create a project at [console.firebase.google.com](https://console.firebase.google.com) and add a **Web app**. Copy the config it shows.
-2. **Authentication → Sign-in method**: turn on **Email/Password**.
-3. **Firestore Database → Create database** (production mode, a European location), then replace the **Rules** with:
+2. **Authentication → Sign-in method**: turn on **Google** (and Email/Password if you want it as a fallback). Open the Google provider, expand **Web SDK configuration** and copy the **Web client ID**.
+3. **Authentication → Settings → Authorized domains**: add `losmaniac.github.io`.
+4. In [Google Cloud Console → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials) (same project), open the **Web client** and add:
+   - Authorized JavaScript origins: `https://losmaniac.github.io`
+   - Authorized redirect URIs: `https://losmaniac.github.io/Calisthenics/`
+5. **Firestore Database → Create database** (production mode, a European location), then replace the **Rules** with:
 
    ```
    rules_version = '2';
@@ -33,9 +37,9 @@ Open the site in Safari, tap Share, then **Add to Home Screen**.
      }
    }
    ```
-4. In Chalk open **Setup → Cloud sync**, paste the config, and create your account. On other devices paste the same config and sign in.
+6. In Chalk open **Setup → Cloud sync**, paste the config, then the Web client ID, and tap **Continue with Google**. Do the same on other devices.
 
-The config is stored only on your devices, never in this repository.
+Google sign-in uses a full-page redirect rather than a popup, because popups fail in iPhone home-screen apps. The config is stored only on your devices, never in this repository.
 
 ## Development
 

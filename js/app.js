@@ -11,7 +11,8 @@ import './ui/skills.js';
 import './ui/learn.js';
 import './ui/progress.js';
 import './ui/setup.js';
-import { syncNow, scheduleSync } from './sync.js';
+import { syncNow, scheduleSync, googleReturn } from './sync.js';
+import { toast } from './ui/nav.js';
 
 const TABS = ['today', 'skills', 'learn', 'progress', 'me'];
 let shown = null;
@@ -53,6 +54,11 @@ addEventListener('pagehide', flush);
 document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
 
 // Start
+const fromGoogle = googleReturn();
+fromGoogle?.then(err => {
+  if (err && err !== 'CANCELLED') toast(err === 'NETWORK' ? t('m.errNet') : t('m.errGoogle'));
+  go('me', null, { replace: true });
+});
 parse();
 if (S.summary) go('summary', null, { replace: true });
 else if (S.active) go('play', null, { replace: true });

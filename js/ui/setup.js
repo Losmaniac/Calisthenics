@@ -5,7 +5,7 @@ import { t, tri, nm, dayNames, dateTime, lang } from '../i18n.js';
 import { EQUIPMENT } from '../data/exercises.js';
 import { TRACKS, SEED } from '../data/tracks.js';
 import { freshTracks } from '../engine/progress.js';
-import { config, account, parseConfig, setConfig, signIn, signOut, syncNow, status, onStatus } from '../sync.js';
+import { config, account, parseConfig, setConfig, setClientId, signIn, signOut, syncNow, status, onStatus, googleStart } from '../sync.js';
 import { esc, fig } from './common.js';
 import { start } from './player.js';
 import * as sound from '../sound.js';
@@ -58,7 +58,11 @@ function syncSection() {
       <label class="field"><span>${t('m.cfg')}</span><textarea id="cfg" spellcheck="false" autocapitalize="off" placeholder="apiKey: &quot;…&quot;, projectId: &quot;…&quot;"></textarea></label>
       <button class="btn block" data-act="cfg-save">${t('m.connect')}</button>`;
   } else if (!who) {
-    body = `<label class="field"><span>${t('m.email')}</span><input type="email" id="em" autocomplete="username" inputmode="email" autocapitalize="off"></label>
+    const g = config().clientId
+      ? `<button class="btn primary big block" data-act="google">${t('m.google')}</button><p class="muted small" style="margin-top:14px">${t('m.orEmail')}</p>`
+      : `<label class="field"><span>${t('m.client')}</span><input type="text" id="cid" autocapitalize="off" spellcheck="false" placeholder="…apps.googleusercontent.com"></label>
+        <button class="btn block" data-act="cid-save">${t('m.connect')}</button><p class="muted small" style="margin-top:14px">${t('m.orEmail')}</p>`;
+    body = `${g}<label class="field"><span>${t('m.email')}</span><input type="email" id="em" autocomplete="username" inputmode="email" autocapitalize="off"></label>
       <label class="field"><span>${t('m.password')}</span><input type="password" id="pw" autocomplete="current-password"></label>
       <div class="btns two"><button class="btn" data-act="auth" data-arg="up">${t('m.signUp')}</button><button class="btn primary" data-act="auth" data-arg="in">${t('m.signIn')}</button></div>
       <p style="margin-top:12px"><button class="link small" data-act="cfg-forget">${t('m.forget')}</button></p>`;
@@ -203,6 +207,8 @@ acts['cfg-save'] = () => {
   setConfig(cfg); rerender();
 };
 acts['cfg-forget'] = () => { setConfig(null); rerender(); };
+acts['cid-save'] = () => { if (setClientId(document.getElementById('cid')?.value ?? '')) rerender(); else toast(t('m.clientBad')); };
+acts.google = () => googleStart();
 acts['sign-out'] = () => { signOut(); rerender(); };
 acts['sync-now'] = () => syncNow().then(ok => toast(ok ? t('m.syncOk') : syncLine()));
 acts.auth = async mode => {

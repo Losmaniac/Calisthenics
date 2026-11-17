@@ -1,5 +1,5 @@
 // Offline cache. VERSION and FILES are written by tools/stamp.mjs.
-const VERSION = '20261116-9453b3d';
+const VERSION = '20261117-b6702ac';
 const FILES = [
  "./",
  "./css/app.css",
